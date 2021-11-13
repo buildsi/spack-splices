@@ -11,6 +11,10 @@ containers = ["ghcr.io/buildsi/spack-ubuntu-18.04"]
 
 def main(pkg, splice, command):
 
+    print("Package: %s" % pkg)
+    print("Splice: %s" % splice)
+    print("Command: %s" % command)
+
     # Get versions of package
     versions = requests.get(
         "https://raw.githubusercontent.com/spack/packages/main/data/packages/%s.json"
