@@ -2,6 +2,7 @@
 
 import os
 import yaml
+import json
 import sys
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,9 +21,9 @@ def main(pkg):
         if tag not in content:
             sys.exit("%s not found in %s." % (tag, filename))
 
-    print("::set-output name=package::%s\n" % content['package'])
-    print("::set-output name=splice::%s\n" % content['splice'])
-    print("::set-output name=command::%s\n" % content['command'])
+    print("::set-output name=package::%s\n" % json.dumps([content['package']]))
+    print("::set-output name=splice::%s\n" % json.dumps([content['splice']]))
+    print("::set-output name=command::%s\n" % json.dumps([content['command']]))
 
 
 if __name__ == "__main__":
