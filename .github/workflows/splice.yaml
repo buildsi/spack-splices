@@ -3,7 +3,7 @@ on:
   workflow_dispatch: 
     inputs:
       splice:
-        description: 'Name of <package>.yaml in splices (e.g., curl)'
+        description: 'Name of YAML splice config in splices (e.g., curl.yaml)'
         required: true
 
 jobs:
@@ -13,11 +13,16 @@ jobs:
       packages: read
     outputs:
       containers: ${{ steps.generate.outputs.containers }}
+      package: ${{ steps.setup.outputs.package }}
+      splice: ${{ steps.setup.outputs.splice }}
+      command: ${{ steps.setup.outputs.command }}
+
     name: Build Matrix
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup splice
+        id: setup
         env:
           package: ${{ github.event.inputs.splice }}
         run: |
@@ -41,7 +46,8 @@ jobs:
         # Each entry is a container, and then compiler within it, and a tag for the version, and the version
         container: ${{ fromJson(needs.prepare.outputs.containers) }}
         arch: ['linux/amd64'] # linux/ppc64le,linux/arm64 these take forever
-        package: ["${{ env.package }}"]
+        package: [${{ fromJson(needs.prepare.outputs.package) }}]
+        splice: [${{ fromJson(needs.prepare.outputs.splice) }}]
 
     # Run tests inside the container above - we could also build with Dockerfile if desired
     container:
@@ -59,11 +65,11 @@ jobs:
         run: |
           apt-get update && apt-get install -y vim libtool
           cd /opt/spack && git fetch && git checkout vsoch/db-17-splice && cd -
-          printf "spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ env.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${command}\n"
-          spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ env.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${{ env.command}}
+          printf "spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${command}\n"
+          spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${{ matrix.command}}
           
       - name: Save Result Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: "test-results-${{ env.package }}-${{ matrix.container[3] }}"
+          name: "test-results-${{ matrix.package }}-${{ matrix.container[3] }}"
           path: ./results
