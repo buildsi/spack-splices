@@ -1,8 +1,15 @@
 # Testing Splicing
 
 This is a testing ground for splicing! You can use the workflow dispatch to run
-a job (and upload artifacts, TBA for saving somewhere).
+a job (and upload artifacts, TBA for saving somewhere). As an example, for dispatch
+params you might do:
 
+ - **package**: curl
+ - **splice**: 
+ - **command** curl --head https://linuxize.com/
+
+
+For the above, the command is expected to use an executable in the main package bin.
 You can also use the [Dockerfile](Dockerfile) to test a local splice, with
 instructions below.
 

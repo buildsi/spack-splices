@@ -3,7 +3,7 @@ on:
   workflow_dispatch: 
     inputs:
       package:
-        description: 'Name of spack package to splice no (version)'
+        description: 'Name of spack package to splice (no version)'
         required: true
 
       splice:
@@ -66,7 +66,8 @@ jobs:
           apt-get update && apt-get install -y gfortran vim libtool
           cd /opt/spack && git fetch && git checkout vsoch/db-17-splice
           spack install libabigail
-          spack python splice.py ${{ matrix.package }} ${{ matrix.splice }} ${{ matrix.package }}-${{ }}-splices.json ${{ matrix.command }}
+          printf "spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${{ matrix.command }}\n"
+          spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${{ matrix.command }}
           
       - name: Save Result Artifact
         uses: actions/upload-artifact@v2
