@@ -23,8 +23,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup splice
         id: setup
-        env:
-          package: ${{ github.event.inputs.splice }}
         run: |
             pip install pyaml
             python scripts/prepare-splice.py ${package}
