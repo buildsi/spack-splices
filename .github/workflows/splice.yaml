@@ -44,6 +44,7 @@ jobs:
       fail-fast: false
       matrix:
         # Each entry is a container, and then compiler within it, and a tag for the version, and the version
+        # [container, label, container_name, pkg, version, splice, command]
         container: ${{ fromJson(needs.prepare.outputs.containers) }}
         arch: ['linux/amd64'] # linux/ppc64le,linux/arm64 these take forever
 
@@ -63,11 +64,11 @@ jobs:
         run: |
           apt-get update && apt-get install -y vim libtool
           cd /opt/spack && git fetch && git checkout vsoch/db-17-splice && cd -
-          printf "spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.container[4] }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${command}\n"
-          spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.container[4] }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${{ matrix.container[5] }}
-          
+          printf "spack python splice.py ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} ${{ matrix.container[3] }}-${{ matrix.container[4] }}-splices.json ${{ matrix.container[5] }}\n"
+          spack python splice.py ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} ${{ matrix.container[3] }}-${{ matrix.container[4] }}-splices.json ${{ matrix.container[5] }}        
+
       - name: Save Result Artifact
         uses: actions/upload-artifact@v2
         with:
           name: "test-results-${{ matrix.package }}-${{ matrix.container[3] }}"
-          path: ./results
+          path: ./${{ matrix.container[3] }}-${{ matrix.container[4] }}-splices.json

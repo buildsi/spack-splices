@@ -53,7 +53,7 @@ def main(pkg, splice, command):
                 name = name + "-" + label.replace("@", "-")
             for version in versions:
                 container_name = version + "-" + name
-                matrix.append([container, label, container_name, version, splice, command])
+                matrix.append([container, label, container_name, pkg, version, splice, command])
 
     # We can only get up to 256 max - select randomly
     if len(matrix) >= 256:
