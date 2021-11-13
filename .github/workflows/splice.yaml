@@ -32,7 +32,7 @@ jobs:
         id: generate
         run: |
             pip install requests
-            python scripts/generate-matrix.py ${{ env.package }}
+            python scripts/generate-matrix.py ${{ steps.setup.outputs.package }}
             
   build:
     runs-on: ubuntu-latest
