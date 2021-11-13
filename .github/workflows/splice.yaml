@@ -50,7 +50,7 @@ jobs:
 
     # Run tests inside the container above - we could also build with Dockerfile if desired
     container:
-      image: ghcr.io/rse-ops/${{ matrix.container[0] }}
+      image: ${{ matrix.container[0] }}
       options: "--platform=${{ matrix.arch }}"
 
     name: Run ${{ matrix.package }} ${{ matrix.container[0] }} ${{ matrix.container[1] }}
@@ -66,12 +66,11 @@ jobs:
           apt-get update && apt-get install -y gfortran vim libtool
           cd /opt/spack && git fetch && git checkout vsoch/db-17-splice
           spack install libabigail
-          printf "spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${{ matrix.command }}\n"
-          spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${{ matrix.command }}
+          printf "spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${command}\n"
+          spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${command}
           
       - name: Save Result Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: "test-results-${{ env.package }}"
+          name: "test-results-${{ env.package }}-${{ matrix.container[3] }}"
           path: ./results
-
