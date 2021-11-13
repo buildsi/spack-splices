@@ -9,7 +9,7 @@ import json
 containers = ["ghcr.io/buildsi/spack-ubuntu-18.04"]
 
 
-def main(pkg):
+def main(pkg, splice, command):
 
     # Get versions of package
     versions = requests.get(
@@ -49,7 +49,7 @@ def main(pkg):
                 name = name + "-" + label.replace("@", "-")
             for version in versions:
                 container_name = version + "-" + name
-                matrix.append([container, label, container_name, version])
+                matrix.append([container, label, container_name, version, splice, command])
 
     # We can only get up to 256 max - select randomly
     if len(matrix) >= 256:
@@ -63,6 +63,7 @@ def main(pkg):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 4:
         sys.exit("Please provide the package name as an argument!")
-    main(sys.argv[1])
+    # package         splice      
+    main(sys.argv[1], sys.argv[2], " ".join(sys.argv[3:]))

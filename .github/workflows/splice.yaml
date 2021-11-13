@@ -32,7 +32,7 @@ jobs:
         id: generate
         run: |
             pip install requests
-            python scripts/generate-matrix.py ${{ steps.setup.outputs.package }}
+            python scripts/generate-matrix.py ${{ steps.setup.outputs.package }} ${{ steps.setup.outputs.splice }} ${{ steps.setup.outputs.command }}
             
   build:
     runs-on: ubuntu-latest
@@ -46,8 +46,6 @@ jobs:
         # Each entry is a container, and then compiler within it, and a tag for the version, and the version
         container: ${{ fromJson(needs.prepare.outputs.containers) }}
         arch: ['linux/amd64'] # linux/ppc64le,linux/arm64 these take forever
-        package: ${{ fromJson(needs.prepare.outputs.package) }}
-        splice: ${{ fromJson(needs.prepare.outputs.splice) }}
 
     # Run tests inside the container above - we could also build with Dockerfile if desired
     container:
@@ -65,8 +63,8 @@ jobs:
         run: |
           apt-get update && apt-get install -y vim libtool
           cd /opt/spack && git fetch && git checkout vsoch/db-17-splice && cd -
-          printf "spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${command}\n"
-          spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${{ matrix.command}}
+          printf "spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.container[4] }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${command}\n"
+          spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.container[4] }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${{ matrix.container[5] }}
           
       - name: Save Result Artifact
         uses: actions/upload-artifact@v2
