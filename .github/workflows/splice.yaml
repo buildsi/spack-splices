@@ -53,7 +53,7 @@ jobs:
       image: ${{ matrix.container[0] }}
       options: "--platform=${{ matrix.arch }}"
 
-    name: Run ${{ matrix.package }} ${{ matrix.container[0] }} ${{ matrix.container[1] }}
+    name: ${{ matrix.package }} ${{ matrix.container[0] }} ${{ matrix.container[1] }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -63,9 +63,8 @@ jobs:
           SPACK_ADD_DEBUG_FLAGS: true
           command: "${{ github.event.inputs.command }}"
         run: |
-          apt-get update && apt-get install -y gfortran vim libtool
-          cd /opt/spack && git fetch && git checkout vsoch/db-17-splice
-          spack install libabigail
+          apt-get update && apt-get install -y vim libtool
+          cd /opt/spack && git fetch && git checkout vsoch/db-17-splice && cd -
           printf "spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${command}\n"
           spack python splice.py ${{ matrix.package }}@${{ matrix.container[3] }} ${{ matrix.splice }} ${{ matrix.package }}-${{ matrix.container[3] }}-splices.json ${command}
           

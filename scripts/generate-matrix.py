@@ -6,7 +6,7 @@ import sys
 import json
 
 # To start we are just going to test one OS and container
-containers = ["ghcr.io/buildsi/spack-ubuntu-20.04"]
+containers = ["ghcr.io/buildsi/spack-ubuntu-18.04"]
 
 
 def main(pkg):
