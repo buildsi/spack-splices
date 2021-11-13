@@ -1,0 +1,76 @@
+name: Run Splice Analysis
+on:
+  workflow_dispatch: 
+    inputs:
+      package:
+        description: 'Name of spack package to splice no (version)'
+        required: true
+
+      splice:
+        description: 'The library to splice in (no version)'
+        required: true
+
+      # If we need more than one command, or different tests, this can be updated
+      command:
+        description: 'Command to test against binary (assumes just one)'
+        required: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    outputs:
+      containers: ${{ steps.generate.outputs.containers }}
+    name: Build Matrix
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Generate matrix
+        id: generate
+        env:
+          package: ${{ github.event.inputs.package }}
+        run: |
+            pip install requests
+            python scripts/generate-matrix.py ${package}
+            
+  build:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+    permissions:
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # Each entry is a container, and then compiler within it, and a tag for the version, and the version
+        container: ${{ fromJson(needs.prepare.outputs.containers) }}
+        arch: ['linux/amd64'] # linux/ppc64le,linux/arm64 these take forever
+        package: ["${{ github.event.inputs.package }}"]
+
+    # Run tests inside the container above - we could also build with Dockerfile if desired
+    container:
+      image: ghcr.io/rse-ops/${{ matrix.container[0] }}
+      options: "--platform=${{ matrix.arch }}"
+
+    name: Run ${{ matrix.package }} ${{ matrix.container[0] }} ${{ matrix.container[1] }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Run analysis
+        env:
+          SPACK_ADD_DEBUG_FLAGS: true
+          command: "${{ github.event.inputs.command }}"
+        run: |
+          apt-get update && apt-get install -y gfortran vim libtool
+          cd /opt/spack && git fetch && git checkout vsoch/db-17-splice
+          spack install libabigail
+          spack python splice.py ${{ matrix.package }} ${{ matrix.splice }} ${{ matrix.package }}-${{ }}-splices.json ${{ matrix.command }}
+          
+      - name: Save Result Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: "test-results-${{ env.package }}"
+          path: ./results
+
