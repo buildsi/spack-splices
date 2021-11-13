@@ -1,17 +1,21 @@
 # Testing Splicing
 
 This is a testing ground for splicing! You can use the workflow dispatch to run
-a job (and upload artifacts, TBA for saving somewhere). As an example, for dispatch
-params you might do:
+a job (and upload artifacts, TBA for saving somewhere). Running locally, instructions are below.
+For running on GitHub, you can add a file to [splices](splices) and then trigger the dispatch
+event for the workflow. Each YAML file in splices should have the following:
 
- - **package**: curl
- - **splice**: 
- - **command** curl --head https://linuxize.com/
+```yaml
+package: curl
+splice: zlib
+command: curl --head https://linuxize.com/
+```
 
-
-For the above, the command is expected to use an executable in the main package bin.
-You can also use the [Dockerfile](Dockerfile) to test a local splice, with
-instructions below.
+It's currently a flat list because we have one of each, and this can be adjusted as needed.
+Each of these is considered one experiment. You should not include versions with the package
+to be spliced, or the library to splice in, as they will be discovered programatically.
+To then run the workflow, simply input "curl.yaml" as the splice variable in the GitHub
+workflow interface.
 
 ## Build the container
 
