@@ -46,8 +46,8 @@ jobs:
         # Each entry is a container, and then compiler within it, and a tag for the version, and the version
         container: ${{ fromJson(needs.prepare.outputs.containers) }}
         arch: ['linux/amd64'] # linux/ppc64le,linux/arm64 these take forever
-        package: [${{ fromJson(needs.prepare.outputs.package) }}]
-        splice: [${{ fromJson(needs.prepare.outputs.splice) }}]
+        package: ${{ fromJson(needs.prepare.outputs.package) }}
+        splice: ${{ fromJson(needs.prepare.outputs.splice) }}
 
     # Run tests inside the container above - we could also build with Dockerfile if desired
     container:
