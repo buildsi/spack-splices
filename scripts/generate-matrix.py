@@ -54,6 +54,7 @@ def main(pkg, splice, command):
             # for version in versions:
             #    container_name = version + "-" + name
             # Just build one version (with whatever compiler is default) for now
+            container_name = name
             matrix.append([container, label, container_name, pkg, "default", splice, command])
 
     # We can only get up to 256 max - select randomly
