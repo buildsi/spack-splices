@@ -59,6 +59,8 @@ def splice_all_versions(specA_name, specB_name, transitive=True):
     # The second library we can try splicing all versions
     specB = Spec(specB_name)
     for version in specB.package.versions:
+        if not version:
+            continue
         splice_name = "%s@%s" % (specB_name, version)
         print("Testing splicing in %s" % splice_name)
         dep = Spec(splice_name).concretized()
