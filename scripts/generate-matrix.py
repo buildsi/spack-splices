@@ -51,11 +51,9 @@ def main(pkg, splice, command):
             )
             if "gcc" not in name and "clang" not in name:
                 name = name + "-" + label.replace("@", "-")
-            # for version in versions:
-            #    container_name = version + "-" + name
-            # Just build one version (with whatever compiler is default) for now
-            container_name = name
-            matrix.append([container, label, container_name, pkg, "default", splice, command])
+            for version in versions:
+                container_name = version + "-" + name
+                matrix.append([container, label, container_name, pkg, version, splice, command])
 
     # We can only get up to 256 max - select randomly
     if len(matrix) >= 256:
