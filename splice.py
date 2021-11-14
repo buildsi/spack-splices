@@ -172,7 +172,7 @@ def run_libabigail(splices):
     abi = spack.spec.Spec("libabigail")
     abi.concretize()
     add_to_path(os.path.join(abi.prefix, "bin"))
-
+    os.listdir(os.path.join(abi.prefix, "bin"))
     abicompat = spack.util.executable.which('abicompat')
     if not abicompat:
         sys.exit("abicompat not found.")
