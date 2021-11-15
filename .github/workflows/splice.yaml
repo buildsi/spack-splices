@@ -70,5 +70,5 @@ jobs:
       - name: Save Result Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: "test-results-${{ matrix.package }}-${{ matrix.container[3] }}"
+          name: "test-results-${{ matrix.container[3] }}-${{ matrix.container[4] }}"
           path: ./${{ matrix.container[3] }}-${{ matrix.container[4] }}-splices.json

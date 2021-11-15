@@ -185,7 +185,7 @@ def run_libabigail(splices):
     """
     Run libabigail to add to the predictions
     """
-    abi = spack.spec.Spec("libabigail+docs")
+    abi = spack.spec.Spec("libabigail")
     abi.concretize()
     add_to_path(os.path.join(abi.prefix, "bin"))
     os.listdir(os.path.join(abi.prefix, "bin"))
