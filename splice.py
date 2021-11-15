@@ -57,7 +57,7 @@ def splice_all_versions(specA_name, specB_name, transitive=True):
     try:
         specA.package.do_install(force=True)
     except:
-        sys.exit("We cannot install the original spec.")
+        return []
 
     # Return list of spliced specs!
     splices = []
@@ -390,7 +390,12 @@ def main():
     print("command: %s" % command)
     print("outfile: %s" % args.outfile)
 
+    # An empty file is indicator that we tested the version, no splices
     splices = splice_all_versions(args.binary, args.lib)
+    if not splices:
+        with open(args.outfile, "w") as fd:
+            fd.write(json.dumps(splices, indent=4))
+        sys.exit("We cannot install the original spec.")
 
     # Add to each splice the list of binaries and libs
     splices = prepare_splices(splices, args.lib)
