@@ -223,6 +223,7 @@ def run_libabigail(splices):
 
                     # Run abicompat to make a prediction
                     res = run_command("%s %s %s" % (abicompat.path, original, lib))
+                    print(res)
                     predictions[binary][lib] = (
                         res["result"] == "" and res["return_code"] == 0
                     )
@@ -349,13 +350,19 @@ if __name__ == "__main__":
             "Usage:\nspack python splice.py curl@7.56.0 zlib spliced.json curl -I --http2 -s https://linuxize.com/"
         )
 
+    # Ensure we have debug flags added
+    os.putenv("SPACK_ADD_DEBUG_FLAGS", "true")
+    os.environ["SPACK_ADD_DEBUG_FLAGS"] = "true"
+
     # TODO make a better command line parser
+
     splices = splice_all_versions(sys.argv[1], sys.argv[2])
 
     # The remainder of arguments constitute the test command
     command = " ".join(sys.argv[4:])
 
     # Add to each splice the list of binaries and libs
+    # TODO need to see why debug not present for zlib
     splices = prepare_splices(splices, sys.argv[2])
     splices = run_symbolator(splices)
     splices = run_libabigail(splices)
