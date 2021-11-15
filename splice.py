@@ -6,6 +6,7 @@
 # spack python splice.py specA specB
 
 
+import argparse
 import os
 import sys
 import shlex
@@ -223,7 +224,11 @@ def run_libabigail(splices):
 
                     # Run abicompat to make a prediction
                     res = run_command("%s %s %s" % (abicompat.path, original, lib))
-                    print(res)
+
+                    # If there is a libabigail output, print to see
+                    if res["result"] != "":
+                        print(res["result"])
+
                     predictions[binary][lib] = (
                         res["result"] == "" and res["return_code"] == 0
                     )
@@ -344,26 +349,45 @@ def run_command(cmd):
     return {"result": res, "return_code": output.returncode}
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        sys.exit(
-            "Usage:\nspack python splice.py curl@7.56.0 zlib spliced.json curl -I --http2 -s https://linuxize.com/"
-        )
+def get_parser():
+    parser = argparse.ArgumentParser(description="splice")
+    description = "Splice a library across versions into a binary."
+    subparsers = parser.add_subparsers(
+        help="actions",
+        title="actions",
+        description=description,
+        dest="command",
+    )
+    splice = subparsers.add_parser("splice", help="splice")
+    splice.add_argument("binary", help="binary")
+    splice.add_argument("lib", help="library to splice in")
+    splice.add_argument("--outfile", help="output json file", default="spliced.json")
+    return parser
+
+
+def main():
+
+    parser = get_parser()
+
+    def help(return_code=0):
+        parser.print_help()
+        sys.exit(return_code)
+
+    args, command = parser.parse_known_args()
+    if not args.command:
+        help()
 
     # Ensure we have debug flags added
     os.putenv("SPACK_ADD_DEBUG_FLAGS", "true")
     os.environ["SPACK_ADD_DEBUG_FLAGS"] = "true"
 
-    # TODO make a better command line parser
-
-    splices = splice_all_versions(sys.argv[1], sys.argv[2])
+    splices = splice_all_versions(args.binary, args.lib)
 
     # The remainder of arguments constitute the test command
-    command = " ".join(sys.argv[4:])
+    command = " ".join(command)
 
     # Add to each splice the list of binaries and libs
-    # TODO need to see why debug not present for zlib
-    splices = prepare_splices(splices, sys.argv[2])
+    splices = prepare_splices(splices, args.lib)
     splices = run_symbolator(splices)
     splices = run_libabigail(splices)
     splices = run_actual(splices, command)
@@ -376,5 +400,9 @@ if __name__ == "__main__":
         for libset in splice["libs"]:
             libset["dep"] = str(libset["dep"])
 
-    with open(sys.argv[3], "w") as fd:
+    with open(args.outfile, "w") as fd:
         fd.write(json.dumps(splices, indent=4))
+
+
+if __name__ == "__main__":
+    main()
