@@ -64,9 +64,8 @@ jobs:
         run: |
           apt-get update && apt-get install -y vim libtool
           cd /opt/spack && git fetch && git checkout vsoch/db-17-splice && cd -
-          spack install libabigail+docs
-          printf "spack python splice.py splice ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} --outfile ${{ matrix.container[3] }}-${{ matrix.container[4] }}-splices.json ${{ matrix.container[5] }}\n"
-          spack python splice.py splice ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} --outfile ${{ matrix.container[3] }}-${{ matrix.container[4] }}-splices.json ${{ matrix.container[5] }}
+          printf "spack python splice.py splice ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} --outfile ${{ matrix.container[3] }}-${{ matrix.container[4] }}-splices.json ${{ matrix.container[6] }}\n"
+          spack python splice.py splice ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} --outfile ${{ matrix.container[3] }}-${{ matrix.container[4] }}-splices.json ${{ matrix.container[6] }}
 
       - name: Save Result Artifact
         uses: actions/upload-artifact@v2

@@ -43,7 +43,7 @@ def main(pkg, splice, command):
         if not labels:
             labels = ["all"]
         else:
-            labels = [x for x in labels.strip(",").split(",") if x]
+            labels = [x for x in labels.strip("|").split("|") if x]
         # programatically get labels or default to "all compilers in the image"
         for label in labels:
             name = (
