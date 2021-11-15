@@ -6,6 +6,7 @@
 # spack python splice.py specA specB
 
 
+import argparse
 import os
 import sys
 import shlex
@@ -30,6 +31,7 @@ from spack.spec import Spec
 # based on that version, run splices and symbolator predictions (maybe libabigail too?)
 # save it somewhere, compare predictions to actual MATRIX!
 
+
 def read_json(filename):
     with open(filename, "r") as fd:
         content = json.loads(fd.read())
@@ -51,7 +53,11 @@ def splice_all_versions(specA_name, specB_name, transitive=True):
     """
     print("Concretizing %s" % specA_name)
     specA = Spec(specA_name).concretized()
-    specA.package.do_install(force=True)
+
+    try:
+        specA.package.do_install(force=True)
+    except:
+        return []
 
     # Return list of spliced specs!
     splices = []
@@ -59,6 +65,8 @@ def splice_all_versions(specA_name, specB_name, transitive=True):
     # The second library we can try splicing all versions
     specB = Spec(specB_name)
     for version in specB.package.versions:
+        if not version:
+            continue
         splice_name = "%s@%s" % (specB_name, version)
         print("Testing splicing in %s" % splice_name)
         dep = Spec(splice_name).concretized()
@@ -86,6 +94,7 @@ def prepare_splices(splices, spliced_lib):
     """
     Prepare each splice to also include binaries and libs involved.
     """
+
     def add_contenders(spec, loc="lib"):
         binaries = set()
         manifest = bindist.get_buildfile_manifest(spec.build_spec)
@@ -93,10 +102,10 @@ def prepare_splices(splices, spliced_lib):
             if contender.startswith(loc):
                 binaries.add(os.path.join(spec.prefix, contender))
         return binaries
-    
+
     # Keep a lookup of corpora
     for splice in splices:
-        splice['binaries'] = list(add_contenders(splice['spec'], "bin"))
+        splice["binaries"] = list(add_contenders(splice["spec"], "bin"))
         for key in ["libs", "corpora"]:
             if key not in splice:
                 splice[key] = []
@@ -104,11 +113,13 @@ def prepare_splices(splices, spliced_lib):
                 splice["predictions"] = {}
 
         if "libs" not in splice:
-            splice['libs'] = []
-        for dep in splice['spec'].dependencies():
+            splice["libs"] = []
+        for dep in splice["spec"].dependencies():
             if dep.name == spliced_lib:
-                splice['libs'].append({"dep": dep, "paths": list(add_contenders(dep, "lib"))})
-                
+                splice["libs"].append(
+                    {"dep": dep, "paths": list(add_contenders(dep, "lib"))}
+                )
+
     return splices
 
 
@@ -122,28 +133,32 @@ def run_symbolator(splices):
     # Create a set of predictions for each binary / lib combination
     for splice in splices:
         predictions = {}
-        for binary in splice['binaries']:
+        for binary in splice["binaries"]:
             if binary not in corpora:
                 corpora[binary] = get_corpus(binary)
             predictions[binary] = {}
-            for libset in splice['libs']:
-                for lib in libset['paths']:
+            for libset in splice["libs"]:
+                for lib in libset["paths"]:
                     if lib not in corpora:
                         corpora[lib] = get_corpus(lib)
 
                     # Make the splice prediction with symbolator
                     sym_result = run_symbols_splice(corpora[binary], corpora[lib])
-                    predictions[binary][lib] = True if not sym_result["missing"] else False
+                    predictions[binary][lib] = (
+                        True if not sym_result["missing"] else False
+                    )
             if not predictions[binary]:
                 del predictions[binary]
-        if predictions:   
-            splice['predictions']['symbolator'] = predictions
+        if predictions:
+            splice["predictions"]["symbolator"] = predictions
     return splices
 
+
 def add_to_path(path):
-    path = "%s:%s" %(path, os.environ["PATH"])
+    path = "%s:%s" % (path, os.environ["PATH"])
     os.putenv("PATH", path)
     os.environ["PATH"] = path
+
 
 def run_actual(splices, command):
     """
@@ -153,59 +168,78 @@ def run_actual(splices, command):
     actual = None
     for splice in splices:
         if actual == None:
-            cmd = "%s/bin/%s" %(splice['specA'].prefix, command)
+            cmd = "%s/bin/%s" % (splice["specA"].prefix, command)
+            print(cmd)
             res = run_command(cmd)
-            if res['return_code'] != 0:
-                sys.exit("Warning, original command %s does not work." % cmd)  
+            if res["return_code"] != 0:
+                sys.exit("Warning, original command %s does not work." % cmd)
 
         # Test the splice binary
-        cmd = "%s/bin/%s" %(splice['spec'].prefix, command)
+        cmd = "%s/bin/%s" % (splice["spec"].prefix, command)
         res = run_command(cmd)
-        splice['actual'] = True if res['return_code'] == 0 else False
+        splice["actual"] = True if res["return_code"] == 0 else False
+    return splices
 
-def run_libabigail(splices):    
+
+def run_libabigail(splices):
     """
     Run libabigail to add to the predictions
     """
     abi = spack.spec.Spec("libabigail")
     abi.concretize()
     add_to_path(os.path.join(abi.prefix, "bin"))
-
-    abicompat = spack.util.executable.which('abicompat')
+    os.listdir(os.path.join(abi.prefix, "bin"))
+    abicompat = spack.util.executable.which("abicompat")
     if not abicompat:
-        sys.exit("abicompat not found.")
+        sys.exit("abicompat not found, make sure you do spack install libabigail+docs")
 
     for splice in splices:
-        if not splice['libs']:
+        if not splice["libs"]:
             continue
 
         predictions = {}
-        for binary in splice['binaries']:
+        for binary in splice["binaries"]:
             predictions[binary] = {}
-            for libset in splice['libs']:
-                for lib in libset['paths']:
-                    libprefix = os.path.basename(lib).split('.')[0]   
+            for libset in splice["libs"]:
+                for lib in libset["paths"]:
+                    libprefix = os.path.basename(lib).split(".")[0]
                     # Find the original library path from SpecA spliced into
                     # This could be dangerous as it assumes .so
-                    originals = glob("%s*so" % os.path.join(libset['dep'].prefix, "lib", libprefix))
+                    originals = glob(
+                        "%s*so" % os.path.join(libset["dep"].prefix, "lib", libprefix)
+                    )
                     if not originals:
-                        print("Warning, original comparison library not found for %s" % lib)
+                        print(
+                            "Warning, original comparison library not found for %s"
+                            % lib
+                        )
                         continue
                     if len(originals) > 1:
-                        print("Warning, more than one library found to match %s, using the first" % lib)
+                        print(
+                            "Warning, more than one library found to match %s, using the first"
+                            % lib
+                        )
                         print("\n".join(originals))
                     original = originals[0]
 
                     # Run abicompat to make a prediction
-                    res = run_command("%s %s %s" % (abicompat.path, original, lib))                   
-                    predictions[binary][lib] = res['result'] == '' and res['return_code'] == 0
+                    res = run_command("%s %s %s" % (abicompat.path, original, lib))
+
+                    # If there is a libabigail output, print to see
+                    if res["result"] != "":
+                        print(res["result"])
+
+                    predictions[binary][lib] = (
+                        res["result"] == "" and res["return_code"] == 0
+                    )
             if not predictions[binary]:
                 del predictions[binary]
-        
+
         if predictions:
-            splice['predictions']['libabigail'] = predictions
+            splice["predictions"]["libabigail"] = predictions
     return splices
-    
+
+
 def get_corpus(path):
     """
     Given a path, generate a corpus
@@ -304,36 +338,82 @@ def run_symbols_splice(A, B):
     result["missing"] = missing
     result["selected"] = selected
     return result
-    
+
+
 def run_command(cmd):
     cmd = shlex.split(cmd)
-    output = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)    
+    output = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     res = output.communicate()[0]
     if isinstance(res, bytes):
-        res = res.decode('utf-8')
+        res = res.decode("utf-8")
     return {"result": res, "return_code": output.returncode}
-    
-if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        sys.exit("Usage:\nspack python splice.py curl@7.56.0 zlib spliced.json curl -I --http2 -s https://linuxize.com/")
-    splices = splice_all_versions(sys.argv[1], sys.argv[2])
+
+
+def get_parser():
+    parser = argparse.ArgumentParser(description="splice")
+    description = "Splice a library across versions into a binary."
+    subparsers = parser.add_subparsers(
+        help="actions",
+        title="actions",
+        description=description,
+        dest="command",
+    )
+    splice = subparsers.add_parser("splice", help="splice")
+    splice.add_argument("binary", help="binary")
+    splice.add_argument("lib", help="library to splice in")
+    splice.add_argument("--outfile", help="output json file", default="spliced.json")
+    return parser
+
+
+def main():
+
+    parser = get_parser()
+
+    def help(return_code=0):
+        parser.print_help()
+        sys.exit(return_code)
+
+    args, command = parser.parse_known_args()
+    if not args.command:
+        help()
+
+    # Ensure we have debug flags added
+    os.putenv("SPACK_ADD_DEBUG_FLAGS", "true")
+    os.environ["SPACK_ADD_DEBUG_FLAGS"] = "true"
 
     # The remainder of arguments constitute the test command
-    command = " ".join(sys.argv[4:])
+    command = " ".join(command)
+
+    # Tell the user what args we have!
+    print(" binary: %s" % args.binary)
+    print("library: %s" % args.lib)
+    print("command: %s" % command)
+    print("outfile: %s" % args.outfile)
+
+    # An empty file is indicator that we tested the version, no splices
+    splices = splice_all_versions(args.binary, args.lib)
+    if not splices:
+        with open(args.outfile, "w") as fd:
+            fd.write(json.dumps(splices, indent=4))
+        sys.exit("We cannot install the original spec.")
 
     # Add to each splice the list of binaries and libs
-    prepare_splices(splices, command)
-    run_symbolator(splices)
-    run_libabigail(splices)
-    run_actual(splices, " ".join(sys.argv[4:]))
+    splices = prepare_splices(splices, args.lib)
+    splices = run_symbolator(splices)
+    splices = run_libabigail(splices)
+    splices = run_actual(splices, command)
 
     # Create a nice little data structure of results
     for splice in splices:
-        splice['spec'] = str(splice['spec'])
-        splice['specA'] = str(splice['specA'])
-        splice['command'] = command
-        for libset in splice['libs']:
-            libset['dep'] = str(libset['dep'])
+        splice["spec"] = str(splice["spec"])
+        splice["specA"] = str(splice["specA"])
+        splice["command"] = command
+        for libset in splice["libs"]:
+            libset["dep"] = str(libset["dep"])
 
-    with open(sys.argv[4], 'w') as fd:
+    with open(args.outfile, "w") as fd:
         fd.write(json.dumps(splices, indent=4))
+
+
+if __name__ == "__main__":
+    main()

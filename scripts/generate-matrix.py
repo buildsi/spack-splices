@@ -6,10 +6,17 @@ import sys
 import json
 
 # To start we are just going to test one OS and container
-containers = ["ghcr.io/buildsi/spack-ubuntu-20.04"]
+containers = [
+    "ghcr.io/buildsi/spack-ubuntu-18.04",
+    "ghcr.io/buildsi/spack-ubuntu-20.04",
+]
 
 
-def main(pkg):
+def main(pkg, splice, command):
+
+    print("Package: %s" % pkg)
+    print("Splice: %s" % splice)
+    print("Command: %s" % command)
 
     # Get versions of package
     versions = requests.get(
@@ -36,7 +43,7 @@ def main(pkg):
         if not labels:
             labels = ["all"]
         else:
-            labels = [x for x in labels.strip(",").split(",") if x]
+            labels = [x for x in labels.strip("|").split("|") if x]
         # programatically get labels or default to "all compilers in the image"
         for label in labels:
             name = (
@@ -49,7 +56,9 @@ def main(pkg):
                 name = name + "-" + label.replace("@", "-")
             for version in versions:
                 container_name = version + "-" + name
-                matrix.append([container, label, container_name, version])
+                matrix.append(
+                    [container, label, container_name, pkg, version, splice, command]
+                )
 
     # We can only get up to 256 max - select randomly
     if len(matrix) >= 256:
@@ -63,6 +72,7 @@ def main(pkg):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 4:
         sys.exit("Please provide the package name as an argument!")
-    main(sys.argv[1])
+    # package         splice
+    main(sys.argv[1], sys.argv[2], " ".join(sys.argv[3:]))
