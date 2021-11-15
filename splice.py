@@ -381,10 +381,16 @@ def main():
     os.putenv("SPACK_ADD_DEBUG_FLAGS", "true")
     os.environ["SPACK_ADD_DEBUG_FLAGS"] = "true"
 
-    splices = splice_all_versions(args.binary, args.lib)
-
     # The remainder of arguments constitute the test command
     command = " ".join(command)
+
+    # Tell the user what args we have!
+    print(" binary: %s" % args.binary)
+    print("library: %s" % args.lib)
+    print("command: %s" % command)
+    print("outfile: %s" % args.outfile)
+
+    splices = splice_all_versions(args.binary, args.lib)
 
     # Add to each splice the list of binaries and libs
     splices = prepare_splices(splices, args.lib)
