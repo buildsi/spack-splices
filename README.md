@@ -53,8 +53,8 @@ This is where the spack install is located if you want to try tweaking things an
 Let's rum the splice script for curl and zlib (across all versions):
 
 ```bash
-                         # binary  # splice # command
-$ spack python splice.py curl@7.78.0 zlib spliced-curl-7.78.json curl --head https://linuxize.com/
+                         # binary  # splice                                  # command
+$ spack python splice.py curl@7.78.0 zlib   --outfile spliced-curl-7.78.json curl --head https://linuxize.com/
 ```
 
 This is going to concretize this version of curl, and then perform the splices (see [splice.py](splice.py) for how that works
