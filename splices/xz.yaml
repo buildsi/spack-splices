@@ -1,0 +1,3 @@
+package: xz
+splice: zlib
+command: xz --version
