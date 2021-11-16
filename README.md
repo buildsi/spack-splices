@@ -63,4 +63,6 @@ and then prepare to generate predictions:
 1. symbolator: will make predictions based on symbol sets
 2. libabigail: makes predictions based on corpora diffs (and an internal representation)
 
-And then the actual "does it work" is determined from running the original executable.
+And then the actual "does it work" is determined from running the original executable. The command
+can be written verbatim in the markdown, and for more complex commands you can write (and reference) a script
+under [tests](tests).
