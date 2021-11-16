@@ -175,10 +175,9 @@ def run_actual(splices, command):
     for splice in splices:
         if actual == None:
             cmd = "%s/bin/%s" % (splice["specA"].prefix, command)
-            print(cmd)
             res = run_command(cmd)
             if res["return_code"] != 0:
-                sys.exit("Warning, original command %s does not work." % cmd)
+                sys.exit("Original command %s does not work." % cmd)
 
         # Test the splice binary
         cmd = "%s/bin/%s" % (splice["spec"].prefix, command)
