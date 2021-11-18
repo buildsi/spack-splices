@@ -115,16 +115,24 @@ def prepare_splices(splices, spliced_lib, command):
         for key in ["libs", "corpora"]:
             if key not in splice:
                 splice[key] = []
-            if "predictions" not in splice:
-                splice["predictions"] = {}
+        if "predictions" not in splice:
+            splice["predictions"] = {}
 
         if "libs" not in splice:
             splice["libs"] = []
-        for dep in splice["spec"].dependencies():
+
+        deps = splice["spec"].dependencies()
+        seen = set([x.name for x in deps])
+        while deps:
+            dep = deps.pop(0)
+            new_deps = [x for x in dep.dependencies() if x.name not in seen]
+            [seen.add(x.name) for x in new_deps]
+            deps += new_deps
             if dep.name == spliced_lib:
                 splice["libs"].append(
                     {"dep": dep, "paths": list(add_contenders(dep, "lib"))}
                 )
+        print(splice["libs"])
 
     return splices
 
