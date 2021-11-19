@@ -198,13 +198,15 @@ def run_libabigail(splices):
     """
     Run libabigail to add to the predictions
     """
-    abi = spack.spec.Spec("libabigail")
+    abi = spack.spec.Spec("libabigail target=x86_64_v4")
     abi.concretize()
     add_to_path(os.path.join(abi.prefix, "bin"))
     os.listdir(os.path.join(abi.prefix, "bin"))
     abicompat = spack.util.executable.which("abicompat")
     if not abicompat:
-        sys.exit("abicompat not found, make sure you do spack install libabigail+docs")
+        sys.exit(
+            "abicompat not found, make sure you do spack install libabigail target=x86_64_v4"
+        )
 
     for splice in splices:
         if not splice["libs"]:
