@@ -12,11 +12,12 @@ containers = [
 ]
 
 
-def main(pkg, splice, command):
+def main(pkg, splice, experiment, command):
 
     print("Package: %s" % pkg)
     print("Splice: %s" % splice)
     print("Command: %s" % command)
+    print("Experiment: %s" % experiment)
 
     # Get versions of package
     versions = requests.get(
@@ -57,7 +58,16 @@ def main(pkg, splice, command):
             for version in versions:
                 container_name = version + "-" + name
                 matrix.append(
-                    [container, label, container_name, pkg, version, splice, command]
+                    [
+                        container,
+                        label,
+                        container_name,
+                        pkg,
+                        version,
+                        splice,
+                        command,
+                        experiment,
+                    ]
                 )
 
     # We can only get up to 256 max - select randomly
@@ -75,4 +85,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 4:
         sys.exit("Please provide the package name as an argument!")
     # package         splice
-    main(sys.argv[1], sys.argv[2], " ".join(sys.argv[3:]))
+    main(sys.argv[1], sys.argv[2], sys.argv[3], " ".join(sys.argv[4:]))

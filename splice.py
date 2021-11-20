@@ -378,6 +378,9 @@ def get_parser():
     splice.add_argument("package", help="package with binary to splice")
     splice.add_argument("lib", help="library to splice in")
     splice.add_argument("--outfile", help="output json file", default="spliced.json")
+    splice.add_argument(
+        "--experiment", help="experiment name (.yaml file without extension)"
+    )
     return parser
 
 
@@ -405,6 +408,7 @@ def main():
     print("library: %s" % args.lib)
     print("command: %s" % command)
     print("outfile: %s" % args.outfile)
+    print("experiment: %s" % args.experiment)
 
     # An empty file is indicator that we tested the version, no splices
     # We provide the command so we know what binaries to include
@@ -425,6 +429,9 @@ def main():
         splice["spec"] = str(splice["spec"])
         splice["specA"] = str(splice["specA"])
         splice["command"] = command
+        splice["experiment"] = args.experiment
+        splice["binary"] = args.binary
+        splice["spliced_lib"] = args.lib
         for libset in splice["libs"]:
             libset["dep"] = str(libset["dep"])
 

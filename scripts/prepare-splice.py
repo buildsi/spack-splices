@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 import yaml
 import json
 import sys
@@ -21,6 +22,8 @@ def main(pkg):
         if tag not in content:
             sys.exit("%s not found in %s." % (tag, filename))
 
+    experiment = re.sub("([.]yaml|[.]yml)", "", pkg)
+    print("::set-output name=experiment::%s\n" % experiment)
     print("::set-output name=package::%s\n" % content["package"])
     print("::set-output name=splice::%s\n" % content["splice"])
     print("::set-output name=command::%s\n" % content["command"])
