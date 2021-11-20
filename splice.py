@@ -198,9 +198,14 @@ def run_libabigail(splices):
     """
     Run libabigail to add to the predictions
     """
-    abi = spack.spec.Spec("libabigail")
-    abi.concretize()
-    abi.package.do_install(force=True)
+    installed_specs = spack.store.db.query("libabigail")
+    if not installed_specs:
+        abi = spack.spec.Spec("libabigail")
+        abi.concretize()
+        abi.package.do_install(force=True)
+    else:
+        abi = installed_specs[0]
+
     add_to_path(os.path.join(abi.prefix, "bin"))
     os.listdir(os.path.join(abi.prefix, "bin"))
     abicompat = spack.util.executable.which("abicompat")
