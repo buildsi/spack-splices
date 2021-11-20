@@ -90,35 +90,49 @@ def splice_all_versions(specA_name, specB_name, transitive=True):
     return splices
 
 
-def prepare_splices(splices, spliced_lib):
+def prepare_splices(splices, spliced_lib, command):
     """
     Prepare each splice to also include binaries and libs involved.
     """
 
-    def add_contenders(spec, loc="lib"):
+    def add_contenders(spec, loc="lib", match=None):
         binaries = set()
         manifest = bindist.get_buildfile_manifest(spec.build_spec)
         for contender in manifest.get("binary_to_relocate"):
+            # Only add binaries of interest, if relevant
+            if match and os.path.basename(contender) != match:
+                continue
             if contender.startswith(loc):
                 binaries.add(os.path.join(spec.prefix, contender))
         return binaries
 
-    # Keep a lookup of corpora
+    # We need to know the binary of interest from the command
+    binary = shlex.split(command)[0]
+
+    # Keep a lookup of corpora (libs and matching binaries of interest)
     for splice in splices:
-        splice["binaries"] = list(add_contenders(splice["spec"], "bin"))
+        splice["binaries"] = list(add_contenders(splice["spec"], "bin", binary))
         for key in ["libs", "corpora"]:
             if key not in splice:
                 splice[key] = []
-            if "predictions" not in splice:
-                splice["predictions"] = {}
+        if "predictions" not in splice:
+            splice["predictions"] = {}
 
         if "libs" not in splice:
             splice["libs"] = []
-        for dep in splice["spec"].dependencies():
+
+        deps = splice["spec"].dependencies()
+        seen = set([x.name for x in deps])
+        while deps:
+            dep = deps.pop(0)
+            new_deps = [x for x in dep.dependencies() if x.name not in seen]
+            [seen.add(x.name) for x in new_deps]
+            deps += new_deps
             if dep.name == spliced_lib:
                 splice["libs"].append(
                     {"dep": dep, "paths": list(add_contenders(dep, "lib"))}
                 )
+        print(splice["libs"])
 
     return splices
 
@@ -169,10 +183,9 @@ def run_actual(splices, command):
     for splice in splices:
         if actual == None:
             cmd = "%s/bin/%s" % (splice["specA"].prefix, command)
-            print(cmd)
             res = run_command(cmd)
             if res["return_code"] != 0:
-                sys.exit("Warning, original command %s does not work." % cmd)
+                sys.exit("Original command %s does not work." % cmd)
 
         # Test the splice binary
         cmd = "%s/bin/%s" % (splice["spec"].prefix, command)
@@ -185,13 +198,15 @@ def run_libabigail(splices):
     """
     Run libabigail to add to the predictions
     """
-    abi = spack.spec.Spec("libabigail")
+    abi = spack.spec.Spec("libabigail target=x86_64_v4")
     abi.concretize()
     add_to_path(os.path.join(abi.prefix, "bin"))
     os.listdir(os.path.join(abi.prefix, "bin"))
     abicompat = spack.util.executable.which("abicompat")
     if not abicompat:
-        sys.exit("abicompat not found, make sure you do spack install libabigail+docs")
+        sys.exit(
+            "abicompat not found, make sure you do spack install libabigail target=x86_64_v4"
+        )
 
     for splice in splices:
         if not splice["libs"]:
@@ -359,7 +374,7 @@ def get_parser():
         dest="command",
     )
     splice = subparsers.add_parser("splice", help="splice")
-    splice.add_argument("binary", help="binary")
+    splice.add_argument("package", help="package with binary to splice")
     splice.add_argument("lib", help="library to splice in")
     splice.add_argument("--outfile", help="output json file", default="spliced.json")
     return parser
@@ -385,20 +400,21 @@ def main():
     command = " ".join(command)
 
     # Tell the user what args we have!
-    print(" binary: %s" % args.binary)
+    print(" binary: %s" % args.package)
     print("library: %s" % args.lib)
     print("command: %s" % command)
     print("outfile: %s" % args.outfile)
 
     # An empty file is indicator that we tested the version, no splices
-    splices = splice_all_versions(args.binary, args.lib)
+    # We provide the command so we know what binaries to include
+    splices = splice_all_versions(args.package, args.lib)
     if not splices:
         with open(args.outfile, "w") as fd:
             fd.write(json.dumps(splices, indent=4))
         sys.exit("We cannot install the original spec.")
 
     # Add to each splice the list of binaries and libs
-    splices = prepare_splices(splices, args.lib)
+    splices = prepare_splices(splices, args.lib, command)
     splices = run_symbolator(splices)
     splices = run_libabigail(splices)
     splices = run_actual(splices, command)
