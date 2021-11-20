@@ -1,0 +1,3 @@
+package: openmpi
+splice: mpich
+command: ompi_info
