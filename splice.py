@@ -43,13 +43,18 @@ def write_json(content, filename):
         fd.write(json.dumps(content, indent=4))
 
 
-def splice_all_versions(specA_name, specB_name, transitive=True):
+def splice_all_versions(specA_name, specB_name, specC_name, transitive=True):
     """
     Perform a splice with a SpecA (a specific spec with a binary),
     and SpecB (the high level spec that is a dependency that we can test
     across versions).
 
-    spack python splice.py curl@7.56.0 zlib
+    Arguments:
+    specA_name: the name of the main package we are splicing up
+    specB_name: the spec we are removing / switching out
+    specC_name: the spec we are splicing in (replacing with)
+
+    For many cases, specB and specC might be the same, but not always.
     """
     print("Concretizing %s" % specA_name)
     specA = Spec(specA_name).concretized()
@@ -62,6 +67,7 @@ def splice_all_versions(specA_name, specB_name, transitive=True):
     # Return list of spliced specs!
     splices = []
 
+    # TODO not sure how to handle this...
     # The second library we can try splicing all versions
     specB = Spec(specB_name)
     for version in specB.package.versions:
@@ -71,30 +77,46 @@ def splice_all_versions(specA_name, specB_name, transitive=True):
         print("Testing splicing in %s" % splice_name)
         dep = Spec(splice_name).concretized()
         dep.package.do_install(force=True)
-        spliced_spec = specA.splice(dep, transitive=transitive)
+        splicing = "success"
 
-        # Exit early and tell the user if there was a splice issue
-        # This would probably need a bug report
-        if specA is spliced_spec or specA.dag_hash() == spliced_spec.dag_hash():
-            sys.exit("There was an issue with splicing!")
-        spack.rewiring.rewire(spliced_spec)
+        # Allow for splicing to fail (we can't support a splice that isn't a dependency)
+        try:
+            spliced_spec = specA.splice(dep, transitive=transitive)
 
-        # check that the prefix exists
-        if not os.path.exists(spliced_spec.prefix):
-            sys.exit(
-                "%s does not exist, so there was a rewiring issue!"
-                % spliced_spec.prefix
-            )
-        splices.append({"spec": spliced_spec, "specA": specA, "specB": splice_name})
+            # Exit early and tell the user if there was a splice issue
+            # This would probably need a bug report
+            if specA is spliced_spec or specA.dag_hash() == spliced_spec.dag_hash():
+                sys.exit("There was an issue with splicing!")
+            spack.rewiring.rewire(spliced_spec)
+
+            # check that the prefix exists
+            if not os.path.exists(spliced_spec.prefix):
+                sys.exit(
+                    "%s does not exist, so there was a rewiring issue!"
+                    % spliced_spec.prefix
+                )
+        except:
+            # If we fail, use specB as the splice to emulate
+            spliced_spec = specB.concretize()
+            splicing = "failed"
+
+        splices.append(
+            {
+                "spec": spliced_spec,
+                "specA": specA,
+                "specB": splice_name,
+                "splice_status": splicing,
+            }
+        )
 
     return splices
 
 
-def prepare_splices(splices, spliced_lib, command):
+def prepare_splices(splices, spliced_lib, replace_with, command):
     """
     Prepare each splice to also include binaries and libs involved.
     """
-
+    # TODO this needs updating
     def add_contenders(spec, loc="lib", match=None):
         binaries = set()
         manifest = bindist.get_buildfile_manifest(spec.build_spec)
@@ -381,7 +403,8 @@ def get_parser():
     )
     splice = subparsers.add_parser("splice", help="splice")
     splice.add_argument("package", help="package with binary to splice")
-    splice.add_argument("lib", help="library to splice in")
+    splice.add_argument("lib", help="library to splice")
+    splice.add_argument("splice", help="what to replace it with")
     splice.add_argument("--outfile", help="output json file", default="spliced.json")
     splice.add_argument(
         "--experiment", help="experiment name (.yaml file without extension)"
@@ -410,21 +433,22 @@ def main():
 
     # Tell the user what args we have!
     print(" binary: %s" % args.package)
-    print("library: %s" % args.lib)
+    print("library: %s" % args.lib)  # the library being spliced
+    print("replace: %s" % args.replace)  # replace it with this one
     print("command: %s" % command)
     print("outfile: %s" % args.outfile)
     print("experiment: %s" % args.experiment)
 
     # An empty file is indicator that we tested the version, no splices
     # We provide the command so we know what binaries to include
-    splices = splice_all_versions(args.package, args.lib)
+    splices = splice_all_versions(args.package, args.lib, args.replace)
     if not splices:
         with open(args.outfile, "w") as fd:
             fd.write(json.dumps(splices, indent=4))
         sys.exit("We cannot install the original spec.")
 
     # Add to each splice the list of binaries and libs
-    splices = prepare_splices(splices, args.lib, command)
+    splices = prepare_splices(splices, args.lib, args.replace, command)
     splices = run_symbolator(splices)
     splices = run_libabigail(splices)
     splices = run_actual(splices, command)

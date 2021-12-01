@@ -14,6 +14,17 @@ command: curl --head https://linuxize.com/
 It's currently a flat list because we have one of each, and this can be adjusted as needed.
 Each of these is considered one experiment. You should not include versions with the package
 to be spliced, or the library to splice in, as they will be discovered programatically.
+The above says "Take the binary 'curl' for the package curl, and replace the chosen version of
+zlib with all other versions of zlib." You can also ask to splice in a totally different dependency,
+for example "Take the hdf5 package, and replace openmpi with mpich." 
+
+```yaml
+package: hdf4
+splice: openmpi
+replace: mpich
+...
+```
+When you don't include a "replace" field, the replacement library is implied to be the same as the spliced one.
 To then run the workflow, simply input "curl.yaml" as the splice variable in the GitHub
 workflow interface.
 

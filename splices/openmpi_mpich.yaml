@@ -1,3 +1,4 @@
-package: openmpi
+package: hdf5
 splice: mpich
+replace: openmpi
 command: ompi_info

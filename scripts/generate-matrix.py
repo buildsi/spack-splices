@@ -12,10 +12,11 @@ containers = [
 ]
 
 
-def main(pkg, splice, experiment, command):
+def main(pkg, splice, replace, experiment, command):
 
     print("Package: %s" % pkg)
     print("Splice: %s" % splice)
+    print("Replace: %s" % replace)
     print("Command: %s" % command)
     print("Experiment: %s" % experiment)
 
@@ -67,6 +68,7 @@ def main(pkg, splice, experiment, command):
                         splice,
                         command,
                         experiment,
+                        replace,
                     ]
                 )
 
@@ -85,4 +87,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 4:
         sys.exit("Please provide the package name as an argument!")
     # package         splice
-    main(sys.argv[1], sys.argv[2], sys.argv[3], " ".join(sys.argv[4:]))
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], " ".join(sys.argv[5:]))
