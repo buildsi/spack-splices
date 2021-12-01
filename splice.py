@@ -434,21 +434,21 @@ def main():
     # Tell the user what args we have!
     print(" binary: %s" % args.package)
     print("library: %s" % args.lib)  # the library being spliced
-    print("replace: %s" % args.replace)  # replace it with this one
+    print("replace: %s" % args.splice)  # replace it with this one
     print("command: %s" % command)
     print("outfile: %s" % args.outfile)
     print("experiment: %s" % args.experiment)
 
     # An empty file is indicator that we tested the version, no splices
     # We provide the command so we know what binaries to include
-    splices = splice_all_versions(args.package, args.lib, args.replace)
+    splices = splice_all_versions(args.package, args.lib, args.splice)
     if not splices:
         with open(args.outfile, "w") as fd:
             fd.write(json.dumps(splices, indent=4))
         sys.exit("We cannot install the original spec.")
 
     # Add to each splice the list of binaries and libs
-    splices = prepare_splices(splices, args.lib, args.replace, command)
+    splices = prepare_splices(splices, args.lib, args.splice, command)
     splices = run_symbolator(splices)
     splices = run_libabigail(splices)
     splices = run_actual(splices, command)
