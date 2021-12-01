@@ -34,7 +34,7 @@ jobs:
         id: generate
         run: |
             pip install requests
-            python scripts/generate-matrix.py ${{ steps.setup.outputs.package }} ${{ steps.setup.outputs.splice }} ${{ steps.setup.output.replace }} ${{ steps.setup.output.experiment }} ${{ steps.setup.outputs.command }}
+            python scripts/generate-matrix.py ${{ steps.setup.outputs.package }} ${{ steps.setup.outputs.splice }} ${{ steps.setup.outputs.replace }} ${{ steps.setup.outputs.experiment }} ${{ steps.setup.outputs.command }}
             
   build:
     runs-on: ubuntu-latest

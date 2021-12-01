@@ -26,11 +26,11 @@ def main(pkg):
 
     # If we don't have a replace, the implied replacement is the same lib
     replace = content.get('replace', content['splice'])
-    print("::set-output name=experiment::%s\n" % experiment)
-    print("::set-output name=package::%s\n" % content["package"])
-    print("::set-output name=splice::%s\n" % content["splice"])
-    print("::set-output name=command::%s\n" % content["command"])
-    print("::set-output name=replace::%s\n" % replace)    
+    print("::set-output name=experiment::%s" % experiment)
+    print("::set-output name=package::%s" % content["package"])
+    print("::set-output name=splice::%s" % content["splice"])
+    print("::set-output name=command::%s" % content["command"])
+    print("::set-output name=replace::%s" % replace)    
 
 
 if __name__ == "__main__":
