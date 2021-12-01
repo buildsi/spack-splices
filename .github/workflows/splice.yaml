@@ -63,6 +63,9 @@ jobs:
         env:
           splice_id: pkg-${{ matrix.container[3] }}-${{ matrix.container[4] }}-splice-${{ matrix.container[5] }}-with-${{ matrix.container[8] }}-experiment-${{ matrix.container[7] }}
         run: echo "splice_id=${splice_id}" >> $GITHUB_ENV
+
+      - name: Install system dependencies
+        run: apt-get install -y libxm4
       - name: Run analysis
         env:
           SPACK_ADD_DEBUG_FLAGS: true
