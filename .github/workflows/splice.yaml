@@ -74,7 +74,7 @@ jobs:
           apt-get update && apt-get install -y vim libtool
           cd /opt/spack && git fetch && git checkout vsoch/db-17-splice && cd -
           printf "spack python splice.py splice ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} ${{ matrix.container[8] }} --outfile ${{ env.splice_id }}-splices.json --experiment ${{ matrix.container[7]}} ${{ matrix.container[6] }}\n"
-          spack python splice.py splice ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} ${{ matrix.container[8] }} --outfile ${{ env.splice_id }}-splices.json --experiment ${{ matrix.container[7]}} ${{ matrix.container[6]}}
+          spack python splice.py splice "${{ matrix.container[3] }}@${{ matrix.container[4] }}" "${{ matrix.container[5] }}" "${{ matrix.container[8] }}" --outfile "${{ env.splice_id }}-splices.json" --experiment "${{ matrix.container[7]}}" "${{ matrix.container[6]}}"
 
       - name: Save Result Artifact
         uses: actions/upload-artifact@v2
