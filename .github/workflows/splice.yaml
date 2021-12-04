@@ -3,7 +3,7 @@ on:
   workflow_dispatch: 
     inputs:
       splice:
-        description: 'Name of YAML splice config in splices (e.g., curl.yaml)'
+        description: 'Name of YAML splice config in splices (e.g., splices/curl.yaml)'
         required: true
 
 jobs:
@@ -19,9 +19,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Install Spliced
-        uses: bulidsi/spliced/action/install@main
+        uses: buildsi/spliced/action/install@main
       - name: Generate Matrix
-        uses: bulidsi/spliced/action/matrix@main
+        uses: buildsi/spliced/action/matrix@main
         with:
           yaml: ${{ github.event.inputs.splice }}
           container: ghcr.io/buildsi/spliced-ubuntu-20.04:latest            
