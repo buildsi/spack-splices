@@ -22,6 +22,7 @@ jobs:
         uses: buildsi/spliced/action/install@main
       - name: Generate Matrix
         uses: buildsi/spliced/action/matrix@main
+        id: generate
         with:
           yaml: ${{ github.event.inputs.splice }}
           container: ghcr.io/buildsi/spliced-ubuntu-20.04:latest            
