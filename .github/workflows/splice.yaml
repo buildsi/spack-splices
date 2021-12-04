@@ -12,7 +12,7 @@ jobs:
     permissions:
       packages: read
     outputs:
-      containers: ${{ steps.generate.outputs.matrix }}
+      matrix: ${{ steps.generate.outputs.matrix }}
 
     name: Generate Spliced Matrix
     steps:
