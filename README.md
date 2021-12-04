@@ -1,8 +1,8 @@
 # Testing Splicing
 
 This is a testing ground for splicing! You can use the workflow dispatch to run
-a job (and upload artifacts, TBA for saving somewhere). Running locally, instructions are below.
-For running on GitHub, you can add a file to [splices](splices) and then trigger the dispatch
+a job (and upload artifacts, TBA for saving somewhere). Running locally, you should use the [spliced](https://github.com/buildsi/spliced)
+library. For either case, you can add a file to [splices](splices) and then trigger the dispatch
 event for the workflow. Each YAML file in splices should have the following:
 
 ```yaml
@@ -36,36 +36,46 @@ Name it whatever you like.
 $ docker build -t splice-test .
 ```
 
-Or change the base image (but be aware the Dockerfile here is for Debian, see the [Dockerfile.centos](Dockerfile.centos)
-for centos.
-
-```bash
-$ docker build --build-arg base=ghcr.io/buildsi/spack-ubuntu-18.04:latest splice-test .
-```
-
 Now shell into the container (the entrypoint is bash)
 
 ```bash
 $ docker run -it splice-test
 ```
 
-If you want to bind the script to change/update and run again:
+The command line client "spliced" should already be installed, and you can always re-pull to update it.
+
+## Generate splice runs
+
+In GitHub workflows, we would generate a matrix of runs. However since we are manually testing, let's just sploot out a list and we can
+choose one that we like. As stated above, a splicing experiment is determined by a YAML configuration file. So if we have a set in [splices](splices)
+we can shell into the container and bind and they will be there:
 
 ```bash
 $ docker run -it -v $PWD:/code splice-test
 ```
 
+Here they are:
+
+```bash
+$ ls /code/splices/
+```
+
+Note that spack and spliced are on the path
+
 ```bash
 $ which spack
 /opt/spack/bin/spack
+
+$ which spliced
+/usr/local/bin/spliced
 ```
 
-This is where the spack install is located if you want to try tweaking things and then re-running.
-Let's rum the splice script for curl and zlib (across all versions):
+Now let's generate a set of commands to play with!
 
 ```bash
-                         # binary  # splice                                  # command
-$ spack python splice.py curl@7.78.0 zlib   --outfile spliced-curl-7.78.json curl --head https://linuxize.com/
+$ spliced command /code/splices/curl.yaml
+...
+spliced splice --package curl@7.74.0 --splice zlib --runner spack --replace zlib --experiment curl curl --head https://linuxize.com/
 ```
 
 This is going to concretize this version of curl, and then perform the splices (see [splice.py](splice.py) for how that works
