@@ -3,7 +3,7 @@ on:
   workflow_dispatch: 
     inputs:
       splice:
-        description: 'Name of YAML splice config in splices (e.g., curl.yaml)'
+        description: 'Name of YAML splice config in splices (e.g., splices/curl.yaml)'
         required: true
 
 jobs:
@@ -12,30 +12,22 @@ jobs:
     permissions:
       packages: read
     outputs:
-      containers: ${{ steps.generate.outputs.containers }}
-      package: ${{ steps.setup.outputs.package }}
-      splice: ${{ steps.setup.outputs.splice }}
-      command: ${{ steps.setup.outputs.command }}
-      experiment: ${{ steps.setup.outputs.experiment }}
+      matrix: ${{ steps.generate.outputs.matrix }}
 
-    name: Build Matrix
+    name: Generate Spliced Matrix
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Setup splice
-        id: setup
-        env:
-          package: ${{ github.event.inputs.splice }}
-        run: |
-            pip install pyaml
-            python scripts/prepare-splice.py ${package}
-      - name: Generate matrix
+      - name: Install Spliced
+        uses: buildsi/spliced/action/install@main
+      - name: Generate Matrix
+        uses: buildsi/spliced/action/matrix@main
         id: generate
-        run: |
-            pip install requests
-            python scripts/generate-matrix.py ${{ steps.setup.outputs.package }} ${{ steps.setup.outputs.splice }} ${{ steps.setup.output.experiment }} ${{ steps.setup.outputs.command }}
-            
-  build:
+        with:
+          yaml: ${{ github.event.inputs.splice }}
+          container: ghcr.io/buildsi/spliced-ubuntu-20.04:latest            
+
+  run-splices:
     runs-on: ubuntu-latest
     needs:
       - prepare
@@ -44,32 +36,45 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Each entry is a container, and then compiler within it, and a tag for the version, and the version
-        # [container, label, container_name, pkg, version, splice, command, experiment]
-        container: ${{ fromJson(needs.prepare.outputs.containers) }}
-        arch: ['linux/amd64'] # linux/ppc64le,linux/arm64 these take forever
+        # Each entry has a command, and all the variables provided individually
+        # {
+        #   "command": "spliced splice --package curl@7.52.1 --splice zlib --runner spack --replace zlib --experiment curl curl --head https://linuxize.com/",
+        #   "package": "curl@7.52.1",
+        #   "runner": "spack",
+        #   "splice": "zlib",
+        #   "replace": "zlib",
+        #   "experiment": "curl",
+        #   "container": "ghcr.io..."
+        # },
+        entry: ${{ fromJson(needs.prepare.outputs.matrix) }}
+        arch: ['linux/amd64']
 
     # Run tests inside the container above - we could also build with Dockerfile if desired
     container:
-      image: ${{ matrix.container[0] }}
+      image: ${{ matrix.entry.container }}
       options: "--platform=${{ matrix.arch }}"
 
-    name: ${{ matrix.package }} ${{ matrix.container[0] }} ${{ matrix.container[3]}}@${{ matrix.container[4] }}
+    name: ${{ matrix.entry.package }} ${{ matrix.entry.replace }} -> ${{ matrix.entry.splice }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Set Result Name
+        env:
+          splice_id: pkg-${{ matrix.entry.package }}-splice-${{ matrix.entry.splice }}-with-${{ matrix.entry.splice }}-experiment-${{ matrix.entry.experiment }}
+        run: echo "splice_id=${splice_id}" >> $GITHUB_ENV
 
       - name: Run analysis
         env:
           SPACK_ADD_DEBUG_FLAGS: true
+          command: ${{ matrix.entry.command }}
         run: |
           apt-get update && apt-get install -y vim libtool
           cd /opt/spack && git fetch && git checkout vsoch/db-17-splice && cd -
-          printf "spack python splice.py splice ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} --outfile ${{ matrix.container[3] }}-${{ matrix.container[4] }}-splices.json --experiment ${{ matrix.container[7]}} ${{ matrix.container[6] }}\n"
-          spack python splice.py splice ${{ matrix.container[3] }}@${{ matrix.container[4] }} ${{ matrix.container[5] }} --outfile ${{ matrix.container[3] }}-${{ matrix.container[4] }}-${{ matrix.container[7] }}-${{ matrix.container[5] }}-splices.json --experiment ${{ matrix.container[7]}} ${{ matrix.container[6] }}
+          printf "${command} --outfile ${{ env.splice_id }}-splices.json\n"
+          ${command} --outfile ${{ env.splice_id }}-splices.json
 
       - name: Save Result Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: "test-results-${{ matrix.container[3] }}-${{ matrix.container[4] }}-${{ matrix.container[7]}}"
-          path: ./${{ matrix.container[3] }}-${{ matrix.container[4] }}-${{ matrix.container[7] }}-splices.json
+          name: "test-results-${{ env.splice_id }}"
+          path: ./${{ env.splice_id }}-splices.json
