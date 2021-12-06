@@ -6,6 +6,7 @@ library. For either case, you can add a file to [splices](splices) and then trig
 event for the workflow. 
 
 Each YAML file in splices should have the following:
+event for the workflow. Each YAML file in splices should have the following:
 
 ```yaml
 package: curl
