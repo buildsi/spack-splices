@@ -3,7 +3,9 @@
 This is a testing ground for splicing! You can use the workflow dispatch to run
 a job (and upload artifacts, TBA for saving somewhere). Running locally, you should use the [spliced](https://github.com/buildsi/spliced)
 library. For either case, you can add a file to [splices](splices) and then trigger the dispatch
-event for the workflow. Each YAML file in splices should have the following:
+event for the workflow. 
+
+Each YAML file in splices should have the following:
 
 ```yaml
 package: curl

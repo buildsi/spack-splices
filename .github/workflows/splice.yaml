@@ -58,6 +58,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Update spliced
+        run: |
+           pip uninstall spliced || echo "Not installed."
+           git clone https://github.com/buildsi/spliced
+           cd spliced
+           pip install -e .
       - name: Set Result Name
         env:
           splice_id: pkg-${{ matrix.entry.package }}-splice-${{ matrix.entry.splice }}-with-${{ matrix.entry.splice }}-experiment-${{ matrix.entry.experiment }}
