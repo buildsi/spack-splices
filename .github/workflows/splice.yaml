@@ -20,6 +20,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Install Spliced
         uses: buildsi/spliced/action/install@main
+        with:
+          branch: add/mock-spack-splice
       - name: Generate Matrix
         uses: buildsi/spliced/action/matrix@main
         id: generate
@@ -61,7 +63,7 @@ jobs:
       - name: Update spliced
         run: |
            pip uninstall -y spliced || echo "spliced not installed"
-           git clone https://github.com/buildsi/spliced /tmp/spliced
+           git clone -b add/mock-spack-splice https://github.com/buildsi/spliced /tmp/spliced
            cd /tmp/spliced
            pip install .
            cd -
