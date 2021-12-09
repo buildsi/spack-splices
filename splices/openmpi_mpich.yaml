@@ -1,4 +1,7 @@
 package: hdf5
-splice: mpich netmod=tcp
+splice: mpich
+splice_versions:
+  - 3.4.2
+  - 3.2.1
 replace: openmpi
 command: ompi_info
