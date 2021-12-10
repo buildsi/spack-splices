@@ -76,7 +76,7 @@ jobs:
           command: ${{ matrix.entry.command }}
         run: |
           apt-get update && apt-get install -y vim libtool
-          cd /opt/spack && git fetch && git checkout vsoch/db-17-splice && cd -
+          cd /opt/spack && git fetch && git checkout vsoch/db-17-splice && git pull origin vsoch/db-17-splice && cd -
           printf "${command} --outfile ${{ env.splice_id }}-splices.json\n"
           ${command} --outfile ${{ env.splice_id }}-splices.json
 
