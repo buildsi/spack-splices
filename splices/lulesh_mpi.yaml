@@ -1,0 +1,7 @@
+package: lulesh
+splice: mpich
+splice_versions:
+  - 3.4.2
+  - 3.2.1
+replace: openmpi
+command: lulesh2.0
